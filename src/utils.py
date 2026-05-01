@@ -1,5 +1,3 @@
-# src/utils.py
-
 import json
 import os
 from typing import Any, Dict, Optional
@@ -14,18 +12,24 @@ def get_openai_client() -> OpenAI:
     """
     Returns an OpenAI client. Requires OPENAI_API_KEY environment variable.
     """
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
+    api_key = os.getenv("OPENAI_API_KEY", "dummy-key-for-local")
+    base_url = os.getenv("OPENAI_BASE_URL")
+    
+    if not base_url and api_key == "dummy-key-for-local":
         raise RuntimeError("Please set OPENAI_API_KEY environment variable.")
-    return OpenAI(api_key=api_key)
+        
+    return OpenAI(api_key=api_key, base_url=base_url)
 
 
 def call_llm(system_prompt: str, user_prompt: str,
-             model: str = "gpt-4o-mini",
+             model: str = None,
              temperature: float = 0.2) -> str:
     """
     Call the OpenAI Chat Completion API and return text content.
     """
+    if model is None:
+        model = os.getenv("LLM_MODEL", "gpt-4o-mini")
+        
     client = get_openai_client()
     response = client.chat.completions.create(
         model=model,
@@ -34,6 +38,7 @@ def call_llm(system_prompt: str, user_prompt: str,
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
+        response_format={"type": "json_object"}
     )
     return response.choices[0].message.content
 
@@ -131,7 +136,7 @@ def build_data_summary(df: pd.DataFrame, max_days: int = 30) -> Dict[str, Any]:
         agg_dict = {}
         for col in ["spend", "revenue", "clicks", "impressions", "purchases"]:
             if col in df.columns:
-                agg_dict[col] = ("spend" if col == "spend" else col, "sum") if col != "spend" else ("spend", "sum")
+                agg_dict[col] = "sum"
         g = df.groupby(group_cols).agg(agg_dict).reset_index()
         if "spend" in g.columns and "revenue" in g.columns:
             g["roas"] = np.where(g["spend"] > 0, g["revenue"] / g["spend"], 0.0)

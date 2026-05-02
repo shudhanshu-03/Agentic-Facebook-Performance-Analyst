@@ -34,7 +34,7 @@ This system uses a **five-agent architecture**, where each agent plays a special
 
 1. **Clone the repository and enter the directory:**
    ```bash
-   git clone https://github.com/shudhanshu-03/kasparro-agentic-fb-analyst-shudhanshu-prajapati.git
+   git clone <repository URL>
    cd "FB Agentic Analyst"
    ```
 
